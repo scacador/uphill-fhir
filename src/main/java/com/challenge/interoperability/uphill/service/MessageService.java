@@ -123,7 +123,7 @@ public class MessageService {
     }
 
     private boolean isEncounterValid(Encounter encounter) {
-        boolean encounterIdentifier = encounter.hasIdentifier() && encounter.getIdentifier().stream().anyMatch(i -> i.getSystem().equals("urn:uh-patient-id"));
+        boolean encounterIdentifier = encounter.hasIdentifier() && encounter.getIdentifier().stream().anyMatch(i -> i.getSystem().equals("urn:uh-encounter-id"));
         boolean serviceType = encounter.hasServiceType() && encounter.getServiceType().getCoding().stream().anyMatch(c -> c.getSystem().equals("http://hl7.org/fhir/ValueSet/service-type"));
         return encounterIdentifier && encounter.hasStatus() && serviceType && encounter.hasSubject() && encounter.getSubject().getReference().contains("Patient");
     }
