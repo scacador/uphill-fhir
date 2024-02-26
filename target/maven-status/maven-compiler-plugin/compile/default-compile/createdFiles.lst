@@ -1,0 +1,11 @@
+com\challenge\interoperability\uphill\exception\NotFoundException.class
+com\challenge\interoperability\uphill\service\EncounterService.class
+com\challenge\interoperability\uphill\service\MessageService.class
+com\challenge\interoperability\uphill\util\StringJsonConverter.class
+com\challenge\interoperability\uphill\provider\PatientProvider.class
+com\challenge\interoperability\uphill\repository\PatientRepository.class
+com\challenge\interoperability\uphill\controller\FhirController.class
+com\challenge\interoperability\uphill\service\PatientService.class
+com\challenge\interoperability\uphill\domain\entities\PatientEntity.class
+com\challenge\interoperability\uphill\domain\entities\EncounterEntity.class
+com\challenge\interoperability\uphill\repository\EncounterRepository.class

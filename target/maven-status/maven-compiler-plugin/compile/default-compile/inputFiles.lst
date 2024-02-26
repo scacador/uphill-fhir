@@ -1,0 +1,11 @@
+C:\Dev\uphill-challenge\src\main\java\com\challenge\interoperability\uphill\domain\entities\EncounterEntity.java
+C:\Dev\uphill-challenge\src\main\java\com\challenge\interoperability\uphill\service\PatientService.java
+C:\Dev\uphill-challenge\src\main\java\com\challenge\interoperability\uphill\util\StringJsonConverter.java
+C:\Dev\uphill-challenge\src\main\java\com\challenge\interoperability\uphill\repository\EncounterRepository.java
+C:\Dev\uphill-challenge\src\main\java\com\challenge\interoperability\uphill\domain\entities\PatientEntity.java
+C:\Dev\uphill-challenge\src\main\java\com\challenge\interoperability\uphill\controller\FhirController.java
+C:\Dev\uphill-challenge\src\main\java\com\challenge\interoperability\uphill\provider\PatientProvider.java
+C:\Dev\uphill-challenge\src\main\java\com\challenge\interoperability\uphill\service\MessageService.java
+C:\Dev\uphill-challenge\src\main\java\com\challenge\interoperability\uphill\exception\NotFoundException.java
+C:\Dev\uphill-challenge\src\main\java\com\challenge\interoperability\uphill\repository\PatientRepository.java
+C:\Dev\uphill-challenge\src\main\java\com\challenge\interoperability\uphill\service\EncounterService.java
