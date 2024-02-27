@@ -24,7 +24,7 @@ hs_err_pid*
 replay_pid*
 
 
-/.idea
-/target
+.idea
+target
 *.iml
 HELP.md
