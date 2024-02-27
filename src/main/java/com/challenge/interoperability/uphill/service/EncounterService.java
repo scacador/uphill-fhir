@@ -6,6 +6,7 @@ import com.challenge.interoperability.uphill.domain.entities.EncounterEntity;
 import com.challenge.interoperability.uphill.repository.EncounterRepository;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Encounter;
+import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.OperationOutcome;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -38,6 +39,9 @@ public class EncounterService {
             List<Bundle.BundleEntryComponent> encounterEntries = new ArrayList<>();
             for(EncounterEntity encounterEntity : encounterList){
                 Encounter encounter = parser.parseResource(Encounter.class, encounterEntity.getEncounterResource());
+                Meta encounterMeta = new Meta();
+                encounterMeta.setVersionId(String.valueOf(encounterEntity.getVersion()));
+                encounter.setMeta(encounterMeta);
                 Bundle.BundleEntryComponent encounterEntry = new Bundle.BundleEntryComponent();
                 encounterEntry.setResource(encounter);
                 encounterEntries.add(encounterEntry);

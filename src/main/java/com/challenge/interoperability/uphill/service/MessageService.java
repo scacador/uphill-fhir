@@ -10,10 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -96,7 +94,10 @@ public class MessageService {
 
             //create PatientEntity
             PatientEntity patientEntity = new PatientEntity();
-            patientEntity.setId(patient.getIdPart()); //check what to do if there is no id in Patient received
+            if(patient.getIdPart() == null){
+                UUID generatedId = UUID.randomUUID();
+                patientEntity.setId(String.valueOf(generatedId));
+            } else patientEntity.setId(patient.getIdPart());
             patientEntity.setPatientResource(parser.encodeResourceToString(patient));
             //set version to PatientEntity according to previous existence
             if(existingPatient.isPresent()){
@@ -113,15 +114,15 @@ public class MessageService {
             Meta patientMeta = new Meta();
             patientMeta.setVersionId(String.valueOf(createdPatientEntity.getVersion()));
             createdPatient.setMeta(patientMeta);
+            createdPatient.setId(createdPatientEntity.getId());
 
             //Create BundleEntryComponent of the created Patient
             Bundle.BundleEntryComponent patientEntry = new Bundle.BundleEntryComponent();
-            String patientFullUrl = "http://localhost:8080/fhir/Patient/"+createdPatientEntity.getId();
-            patientEntry.setResource(createdPatient).setFullUrl(patientFullUrl);
+            patientEntry.setResource(createdPatient).setFullUrl("http://localhost:8080/fhir/Patient/"+createdPatientEntity.getId());
 
             //Add created Patient to response Bundle and add focus to MessageHeader
             bundleResponse.addEntry(patientEntry);
-            responseHeader.addFocus(new Reference().setReference(patientFullUrl));
+            responseHeader.addFocus(new Reference().setReference("Patient/"+createdPatientEntity.getId()));
         }
 
         //save Encounters
@@ -134,7 +135,10 @@ public class MessageService {
 
             //create EncounterEntity
             EncounterEntity encounterEntity = new EncounterEntity();
-            encounterEntity.setId(encounter.getIdPart()); //check what to do if there is no id in Patient received
+            if(encounter.getIdPart() == null){
+                UUID generatedId = UUID.randomUUID();
+                encounterEntity.setId(String.valueOf(generatedId));
+            } else encounterEntity.setId(encounter.getIdPart());
             encounterEntity.setEncounterResource(parser.encodeResourceToString(encounter));
             //set version to EncounterEntity according to previous existence
             if(existingEncounter.isPresent()){
@@ -151,15 +155,15 @@ public class MessageService {
             Meta encounterMeta = new Meta();
             encounterMeta.setVersionId(String.valueOf(createdEncounterEntity.getVersion()));
             createdEncounter.setMeta(encounterMeta);
+            createdEncounter.setId(createdEncounterEntity.getId());
 
             //Create BundleEntryComponent of the created Encounter
             Bundle.BundleEntryComponent encounterEntry = new Bundle.BundleEntryComponent();
-            String encounterFullUrl = "http://localhost:8080/fhir/Encounter/"+createdEncounterEntity.getId();
-            encounterEntry.setResource(createdEncounter).setFullUrl(encounterFullUrl);
+            encounterEntry.setResource(createdEncounter).setFullUrl("http://localhost:8080/fhir/Encounter/"+createdEncounterEntity.getId());
 
             //Add created Encounter to response Bundle and add focus to MessageHeader
             bundleResponse.addEntry(encounterEntry);
-            responseHeader.addFocus(new Reference().setReference(encounterFullUrl));
+            responseHeader.addFocus(new Reference().setReference("Encounter/"+createdEncounterEntity.getId()));
         }
 
         bundleResponse.setTimestamp(new Date());

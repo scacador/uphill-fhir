@@ -5,6 +5,7 @@ import com.challenge.interoperability.uphill.domain.FhirR4ParserFactory;
 import com.challenge.interoperability.uphill.repository.PatientRepository;
 import com.challenge.interoperability.uphill.domain.entities.PatientEntity;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.OperationOutcome;
 import org.hl7.fhir.r4.model.Patient;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,9 @@ public class PatientService {
             List<Bundle.BundleEntryComponent> patientEntries = new ArrayList<>();
             for(PatientEntity patientEntity : patientList){
                 Patient patient = parser.parseResource(Patient.class, patientEntity.getPatientResource());
+                Meta patientMeta = new Meta();
+                patientMeta.setVersionId(String.valueOf(patientEntity.getVersion()));
+                patient.setMeta(patientMeta);
                 Bundle.BundleEntryComponent patientEntry = new Bundle.BundleEntryComponent();
                 patientEntry.setResource(patient);
                 patientEntries.add(patientEntry);
