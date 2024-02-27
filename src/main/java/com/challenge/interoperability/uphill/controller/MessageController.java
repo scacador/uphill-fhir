@@ -1,7 +1,8 @@
 package com.challenge.interoperability.uphill.controller;
 
-import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.parser.DataFormatException;
 import ca.uhn.fhir.parser.IParser;
+import com.challenge.interoperability.uphill.domain.FhirR4ParserFactory;
 import com.challenge.interoperability.uphill.service.MessageService;
 import org.hl7.fhir.r4.model.Bundle;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +14,8 @@ import org.springframework.web.bind.annotation.*;
 public class MessageController {
 
     private final MessageService messageService;
-    FhirContext ctx = FhirContext.forR4();
-    IParser parser = ctx.newJsonParser();
+
+    IParser parser = FhirR4ParserFactory.getParser();
 
     @Autowired
     public MessageController(MessageService messageService) {
@@ -22,10 +23,9 @@ public class MessageController {
     }
 
     @PostMapping("/$process-message")
-    public ResponseEntity<String> receiveMessage(@RequestBody String bundleMessage) {
+    public ResponseEntity<String> receiveMessage(@RequestBody String bundleMessage) throws DataFormatException {
 
         Bundle bundle = parser.parseResource(Bundle.class, bundleMessage);
-
         return messageService.receiveAndValidateMessage(bundle);
 
     }

@@ -1,8 +1,7 @@
 package com.challenge.interoperability.uphill.service;
 
-import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
-import com.challenge.interoperability.uphill.domain.compositeKeys.PatientId;
+import com.challenge.interoperability.uphill.domain.FhirR4ParserFactory;
 import com.challenge.interoperability.uphill.repository.PatientRepository;
 import com.challenge.interoperability.uphill.domain.entities.PatientEntity;
 import org.hl7.fhir.r4.model.Bundle;
@@ -23,8 +22,7 @@ public class PatientService {
     @Autowired
     private PatientRepository patientRepository;
 
-    FhirContext ctx = FhirContext.forR4();
-    IParser parser = ctx.newJsonParser();
+    IParser parser = FhirR4ParserFactory.getParser();
 
     public Optional<PatientEntity> getById(String id){
         return patientRepository.findLastVersionById(id);
@@ -59,10 +57,6 @@ public class PatientService {
     }
 
     public PatientEntity createPatient(PatientEntity patient) {
-        return patientRepository.save(patient);
-    }
-
-    public PatientEntity updatePatient(PatientEntity patient) {
         return patientRepository.save(patient);
     }
 

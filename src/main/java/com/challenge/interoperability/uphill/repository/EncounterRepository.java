@@ -1,7 +1,6 @@
 package com.challenge.interoperability.uphill.repository;
 
 import com.challenge.interoperability.uphill.domain.entities.EncounterEntity;
-import com.challenge.interoperability.uphill.domain.entities.PatientEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;

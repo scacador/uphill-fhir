@@ -1,7 +1,8 @@
 package com.challenge.interoperability.uphill.service;
 
-import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.parser.DataFormatException;
 import ca.uhn.fhir.parser.IParser;
+import com.challenge.interoperability.uphill.domain.FhirR4ParserFactory;
 import com.challenge.interoperability.uphill.domain.entities.EncounterEntity;
 import com.challenge.interoperability.uphill.domain.entities.PatientEntity;
 import org.hl7.fhir.r4.model.*;
@@ -9,8 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -18,8 +19,7 @@ import java.util.stream.Collectors;
 @Service
 public class MessageService {
 
-    FhirContext ctx = FhirContext.forR4();
-    IParser parser = ctx.newJsonParser();
+    IParser parser = FhirR4ParserFactory.getParser();
 
     @Autowired
     private PatientService patientService;
@@ -27,13 +27,14 @@ public class MessageService {
     @Autowired
     private EncounterService encounterService;
 
-    public ResponseEntity<String> receiveAndValidateMessage(Bundle receivedMessage) {
+    public ResponseEntity<String> receiveAndValidateMessage(Bundle receivedMessage) throws DataFormatException {
 
         List<Resource> resources = new ArrayList<>();
         for(Bundle.BundleEntryComponent entry : receivedMessage.getEntry()){
             resources.add(entry.getResource());
         }
 
+        //OperationOutcome to return in case of insuccess
         OperationOutcome outcome;
 
         List<Resource> messageHeaders = resources.stream().filter(r -> r.getResourceType().toString().equals("MessageHeader")).collect(Collectors.toList());
@@ -78,38 +79,91 @@ public class MessageService {
             }
         }
 
-        for (Resource patientResource : patients){
-            Optional<PatientEntity> existingPatient = patientService.getById(patientResource.getIdPart());
-            Patient patient = (Patient) patientResource;
+        //Create Bundle and MessageHeader for success response
+        Bundle bundleResponse = new Bundle();
+        bundleResponse.setType(Bundle.BundleType.MESSAGE);
+
+        MessageHeader responseHeader = createResponseMessageHeader();
+        bundleResponse.addEntry(new Bundle.BundleEntryComponent().setResource(responseHeader));
+
+        //save Patients
+        for (Resource receivedPatientResource : patients){
+
+            Patient patient = (Patient) receivedPatientResource;
+
+            //check if received id of patient already exists
+            Optional<PatientEntity> existingPatient = patientService.getById(receivedPatientResource.getIdPart());
+
+            //create PatientEntity
             PatientEntity patientEntity = new PatientEntity();
             patientEntity.setId(patient.getIdPart()); //check what to do if there is no id in Patient received
             patientEntity.setPatientResource(parser.encodeResourceToString(patient));
-
+            //set version to PatientEntity according to previous existence
             if(existingPatient.isPresent()){
                 patientEntity.setVersion(existingPatient.get().getVersion()+1);
             } else {
                 patientEntity.setVersion(1);
             }
-            patientService.createPatient(patientEntity);
+
+            //save PatientEntity
+            PatientEntity createdPatientEntity = patientService.createPatient(patientEntity);
+            Patient createdPatient = parser.parseResource(Patient.class, createdPatientEntity.getPatientResource());
+
+            //Create Meta for the created Patient
+            Meta patientMeta = new Meta();
+            patientMeta.setVersionId(String.valueOf(createdPatientEntity.getVersion()));
+            createdPatient.setMeta(patientMeta);
+
+            //Create BundleEntryComponent of the created Patient
+            Bundle.BundleEntryComponent patientEntry = new Bundle.BundleEntryComponent();
+            String patientFullUrl = "http://localhost:8080/fhir/Patient/"+createdPatientEntity.getId();
+            patientEntry.setResource(createdPatient).setFullUrl(patientFullUrl);
+
+            //Add created Patient to response Bundle and add focus to MessageHeader
+            bundleResponse.addEntry(patientEntry);
+            responseHeader.addFocus(new Reference().setReference(patientFullUrl));
         }
 
+        //save Encounters
         for (Resource encounterResource : encounters){
-            Optional<EncounterEntity> existingEncounter = encounterService.getById(encounterResource.getIdPart());
+
             Encounter encounter = (Encounter) encounterResource;
+
+            //check if received id of patient already exists
+            Optional<EncounterEntity> existingEncounter = encounterService.getById(encounterResource.getIdPart());
+
+            //create EncounterEntity
             EncounterEntity encounterEntity = new EncounterEntity();
             encounterEntity.setId(encounter.getIdPart()); //check what to do if there is no id in Patient received
             encounterEntity.setEncounterResource(parser.encodeResourceToString(encounter));
-
+            //set version to EncounterEntity according to previous existence
             if(existingEncounter.isPresent()){
                 encounterEntity.setVersion(existingEncounter.get().getVersion()+1);
             } else {
                 encounterEntity.setVersion(1);
             }
-            encounterService.createEncounter(encounterEntity);
+
+            //save EncounterEntity
+            EncounterEntity createdEncounterEntity = encounterService.createEncounter(encounterEntity);
+            Encounter createdEncounter = parser.parseResource(Encounter.class, createdEncounterEntity.getEncounterResource());
+
+            //Create Meta for the created Encounter
+            Meta encounterMeta = new Meta();
+            encounterMeta.setVersionId(String.valueOf(createdEncounterEntity.getVersion()));
+            createdEncounter.setMeta(encounterMeta);
+
+            //Create BundleEntryComponent of the created Encounter
+            Bundle.BundleEntryComponent encounterEntry = new Bundle.BundleEntryComponent();
+            String encounterFullUrl = "http://localhost:8080/fhir/Encounter/"+createdEncounterEntity.getId();
+            encounterEntry.setResource(createdEncounter).setFullUrl(encounterFullUrl);
+
+            //Add created Encounter to response Bundle and add focus to MessageHeader
+            bundleResponse.addEntry(encounterEntry);
+            responseHeader.addFocus(new Reference().setReference(encounterFullUrl));
         }
 
-        outcome = createSuccessOperationOutcome();
-        return new ResponseEntity<>(parser.encodeResourceToString(outcome), HttpStatus.CREATED);
+        bundleResponse.setTimestamp(new Date());
+        return new ResponseEntity<>(parser.encodeResourceToString(bundleResponse), HttpStatus.CREATED);
     }
 
     private boolean isMessageHeaderValid(MessageHeader messageHeader) {
@@ -119,7 +173,6 @@ public class MessageService {
     private boolean isPatientValid(Patient patient) {
         boolean patientIdentifier = patient.getIdentifier().stream().anyMatch(i -> i.getSystem().equals("urn:uh-patient-id"));
         return patientIdentifier && patient.hasName() && patient.hasTelecom() && patient.hasGender() && patient.hasBirthDate();
-
     }
 
     private boolean isEncounterValid(Encounter encounter) {
@@ -137,13 +190,12 @@ public class MessageService {
         return outcome;
     }
 
-    private OperationOutcome createSuccessOperationOutcome() {
-        OperationOutcome outcome = new OperationOutcome();
-        outcome.addIssue()
-                .setSeverity(OperationOutcome.IssueSeverity.INFORMATION)
-                .setCode(OperationOutcome.IssueType.INFORMATIONAL)
-                .setDiagnostics("Message accepted.");
-        return outcome;
+    private MessageHeader createResponseMessageHeader() {
+        MessageHeader responseHeader = new MessageHeader();
+        MessageHeader.MessageHeaderResponseComponent messageHeaderResponseComponent = new MessageHeader.MessageHeaderResponseComponent();
+        messageHeaderResponseComponent.setCode(MessageHeader.ResponseType.OK);
+        responseHeader.setResponse(messageHeaderResponseComponent);
+        return responseHeader;
     }
 
 }

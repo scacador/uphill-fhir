@@ -1,9 +1,8 @@
 package com.challenge.interoperability.uphill.service;
 
-import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
+import com.challenge.interoperability.uphill.domain.FhirR4ParserFactory;
 import com.challenge.interoperability.uphill.domain.entities.EncounterEntity;
-import com.challenge.interoperability.uphill.domain.entities.PatientEntity;
 import com.challenge.interoperability.uphill.repository.EncounterRepository;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Encounter;
@@ -23,8 +22,7 @@ public class EncounterService {
     @Autowired
     private EncounterRepository encounterRepository;
 
-    FhirContext ctx = FhirContext.forR4();
-    IParser parser = ctx.newJsonParser();
+    IParser parser = FhirR4ParserFactory.getParser();
 
     public Optional<EncounterEntity> getById(String id){
         return encounterRepository.findLastVersionById(id);
@@ -55,7 +53,6 @@ public class EncounterService {
                     .setDiagnostics(String.format("No Encounter with identifier %s for system %s was found.", value, system));
             return new ResponseEntity<>(parser.encodeResourceToString(outcome), HttpStatus.NOT_FOUND);
         }
-
     }
 
     public EncounterEntity createEncounter(EncounterEntity encounter) {
